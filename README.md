@@ -50,7 +50,7 @@ Built by **Team Green Flare** for the **Eco-Tech Hackathon 2026 (Environment Wat
 4. **Add your Gemini API Key**:
    Create a `.env` file in the root directory (or `.streamlit/secrets.toml`) and add your key:
    ```env
-   GEMINI_API_KEY=your_api_key_here
+   GEMINI_KEY=your_api_key_here
    ```
    *Note: If you don't add it here, the app will prompt you to enter the API key directly in the sidebar on the UI.*
 
