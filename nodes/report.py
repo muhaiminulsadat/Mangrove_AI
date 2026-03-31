@@ -54,26 +54,34 @@ def node_report(state) -> dict:
         Use real numbers from the data. Be scientific and direct. No fluff.
     """
     )
+    err_msg = ""
     try:
-        raw = gemini_text([prompt], temperature=0.35)
+        raw = gemini_text([prompt], temperature=0.35, json_mode=True)
         data = _extract_json(raw)
         assessment = "\n\n".join(data.get("paragraphs", []))
         actions = data.get("actions", [])
         risk = data.get("risk_level", "MODERATE").upper()
         alert = data.get("alert", "")
     except Exception as e:
-        assessment = f"Report generation error: {e}"
+        assessment = ""
         actions, risk, alert = [], "MODERATE", ""
+        err_msg = f"Report API Error: {str(e)[:150]}"
+        
     elapsed = round(time.time() - t0, 2)
+    
+    logs = [f"[Node 7 · {elapsed}s] Report: risk={risk}, {len(actions)} actions"]
+    errs = []
+    if err_msg:
+        logs.append(f"[Node 7 ERROR] {err_msg}")
+        errs.append(err_msg)
+
     return {
         "assessment": assessment,
         "actions": actions,
         "risk_level": risk,
         "alert_msg": alert,
-        "pipeline_log": [
-            f"[Node 7 · {elapsed}s] Report: risk={risk}, {len(actions)} actions"
-        ],
+        "pipeline_log": logs,
         "done_nodes": ["report"],
         "timings": {"report": elapsed},
-        "errors": [],
+        "errors": errs,
     }

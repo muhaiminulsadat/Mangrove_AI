@@ -30,6 +30,7 @@ from ui.components import (
     RISK_BG,
     RISK_BORDER,
     RISK_TEXT,
+    NODES_META,
 )
 from ui.tabs import (
     render_tab_detection,
@@ -263,7 +264,25 @@ if run_btn:
 
     render_pipe([], "validator", "Node N1 — validating image type...")
     try:
-        final = graph.invoke(init, config={"recursion_limit": 50})
+        final = None
+        for s in graph.stream(init, config={"recursion_limit": 50}, stream_mode="values"):
+            final = s
+            done = s.get("done_nodes", [])
+            
+            active_node = ""
+            active_desc = ""
+            for key, num, name in NODES_META:
+                if key not in done:
+                    active_node = key
+                    active_desc = f"Node {num} — {name} running..."
+                    break
+            
+            if not active_node:
+                active_desc = "Pipeline completed."
+            
+            render_pipe(done, active_node, active_desc)
+            time.sleep(0.05)
+            
     except Exception as e:
         status_ph.error(f"Pipeline error: {e}")
         st.exception(e)

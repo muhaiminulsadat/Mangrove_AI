@@ -1,4 +1,4 @@
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 SEV_FILL = {
     "CRITICAL": (239, 68, 68, 160),
@@ -61,6 +61,16 @@ def draw_boxes(base: Image.Image, hotspots: list) -> Image.Image:
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
     W, H = img.width, img.height
+
+    try:
+        fsize = max(18, int(W * 0.015))
+        fsize_large = max(24, int(W * 0.02))
+        font = ImageFont.truetype("arial.ttf", fsize)
+        font_large = ImageFont.truetype("arial.ttf", fsize_large)
+    except IOError:
+        font = ImageFont.load_default()
+        font_large = font
+
     for i, hs in enumerate(hotspots):
         ymin, xmin, ymax, xmax = hs["box_2d"]
         l = (xmin / 1000) * W
@@ -68,18 +78,35 @@ def draw_boxes(base: Image.Image, hotspots: list) -> Image.Image:
         r = (xmax / 1000) * W
         b = (ymax / 1000) * H
         sev = hs.get("severity", "MODERATE").upper()
-        conf = hs.get("final_confidence", hs.get("detection_confidence", 0))
+        conf = hs.get("final_confidence", hs.get("detection_confidence", "?"))
+        
+        box_width = max(3, int(W * 0.003))
         draw.rectangle(
-            [l, t, r, b], fill=SEV_FILL.get(sev), outline=SEV_STROKE.get(sev), width=3
+            [l, t, r, b], fill=SEV_FILL.get(sev), outline=SEV_STROKE.get(sev), width=box_width
         )
+        
         label = f" {sev[:3]} {conf}% "
-        lw = len(label) * 8
-        tl = max(0, t - 22)
-        draw.rectangle([l, tl, l + lw, tl + 22], fill=SEV_STROKE.get(sev))
-        draw.text((l + 4, tl + 3), label, fill=(15, 23, 42))
+        bbox = draw.textbbox((0, 0), label, font=font)
+        text_w = bbox[2] - bbox[0]
+        text_h = bbox[3] - bbox[1]
+        
+        pad_x, pad_y = 6, 4
+        rect_w = text_w + (pad_x * 2)
+        rect_h = text_h + (pad_y * 2)
+        
+        tl = max(0, t - rect_h)
+        draw.rectangle([l, tl, l + rect_w, tl + rect_h], fill=SEV_STROKE.get(sev))
+        draw.text((l + pad_x, tl + pad_y), label, fill=(15, 23, 42), font=font)
+        
         zone = f"SB-{chr(65 + i)}{i + 1:02d}"
-        draw.text((max(l, r - 60), b - 20), zone, fill=(255, 255, 255))
+        zbox = draw.textbbox((0, 0), zone, font=font_large)
+        zw = zbox[2] - zbox[0]
+        zh = zbox[3] - zbox[1]
+        
+        draw.text((max(l + pad_x, r - zw - pad_x), max(t + pad_y, b - zh - pad_y)), zone, fill=(255, 255, 255), font=font_large)
+        
     return Image.alpha_composite(img, overlay)
+
 
 
 def pipeline_svg(done: list, active: str = "") -> str:

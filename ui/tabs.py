@@ -380,15 +380,7 @@ def render_tab_report(final):
             for i, a in enumerate(actions, 1):
                 acts_html += f'<div class="action-item"><span class="action-num">{i:02d}</span><span class="action-txt">{a}</span></div>'
             st.markdown(acts_html, unsafe_allow_html=True)
-        sc_text = final.get("scene_summary", "")
-        if sc_text:
-            st.markdown(
-                '<br><div class="section-head">AI Scene Summary</div>',
-                unsafe_allow_html=True,
-            )
-            st.markdown(
-                f'<div class="scene-box">{sc_text}</div>', unsafe_allow_html=True
-            )
+
 
 
 def render_tab_log(final):
@@ -411,39 +403,7 @@ def render_tab_log(final):
     log_html += "</div>"
     st.markdown(log_html, unsafe_allow_html=True)
 
-    st.markdown(
-        '<br><div class="section-head">Node Timing Breakdown</div>',
-        unsafe_allow_html=True,
-    )
-    timings = final.get("timings", {})
-    if timings:
-        total_t = sum(timings.values()) or 1
-        t6cols = st.columns(len(timings))
-        for i, (nd, t) in enumerate(timings.items()):
-            pct = t / total_t * 100
-            with t6cols[i]:
-                st.metric(nd.capitalize(), f"{t}s", f"{pct:.0f}%")
 
-        timing_html = '<div class="log-wrap" style="margin-top:16px;">'
-        for nd, t in timings.items():
-            pct = t / total_t * 100
-            display_time = f"{t*1000:.1f}ms" if t < 0.1 else f"{t:.2f}s"
-            bar_color = "#34d399" if pct < 20 else "#fbbf24" if pct < 50 else "#ef4444"
-            timing_html += f"""<div style="margin-bottom:12px;">
-            <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;
-                font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
-                <span>{nd}</span><span style="color:{bar_color};">{display_time} · {pct:.1f}%</span>
-            </div>
-            <div style="height:4px;background:#1e293b;border-radius:99px;border:1px solid #334155;">
-                <div style="height:100%;width:{pct}%;background:{bar_color};border-radius:99px;box-shadow:0 0 8px {bar_color};"></div>
-            </div></div>"""
-        timing_html += (
-            f'<div style="border-top:1px solid #334155;padding-top:12px;margin-top:8px;'
-            f"display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:0.95rem;font-weight:700;\">"
-            f'<span style="color:#94a3b8;">Total</span>'
-            f'<span style="color:#34d399;">{final["total_time"]}s</span></div></div>'
-        )
-        st.markdown(timing_html, unsafe_allow_html=True)
 
     errs = final.get("errors", [])
     if errs:

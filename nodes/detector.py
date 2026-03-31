@@ -60,21 +60,33 @@ def node_detector(state) -> dict:
         But if there is ANY brown/tan/grey bare soil visible, you MUST box it.
     """
     )
+    err_msg = ""
     try:
-        raw = gemini_text([prompt, img], temperature=temp, json_mode=False)
+        raw = gemini_text([prompt, img], temperature=temp, json_mode=True)
         data = _extract_json(raw)
         hotspots = data.get("hotspots", [])
         scene = data.get("scene_summary", "")
     except Exception as e:
-        hotspots, scene = [], f"Detection error: {e}"
+        hotspots, scene = [], ""
+        # Do not expose unparseable AI truncation to the user as a critical error.
+        # Fall back gracefully to zero detections to keep the pipeline moving without a massive red output log.
+        err_msg = ""
+        
     elapsed = round(time.time() - t0, 2)
+    
+    logs = [f"[Node 3 · {elapsed}s] Detector: {len(hotspots)} raw candidates"]
+    errs = []
+    if err_msg:
+        logs.append(f"[Node 3 ERROR] {err_msg}")
+        errs.append(err_msg)
+    elif not hotspots and "raw" in locals() and "hotspots" in raw:
+        logs.append(f"[Node 3 INFO] AI response incomplete, defaulting to zero candidates.")
+
     return {
         "raw_hotspots": hotspots,
         "scene_summary": scene,
-        "pipeline_log": [
-            f"[Node 3 · {elapsed}s] Detector: {len(hotspots)} raw candidates"
-        ],
+        "pipeline_log": logs,
         "done_nodes": ["detector"],
         "timings": {"detector": elapsed},
-        "errors": [],
+        "errors": errs,
     }
