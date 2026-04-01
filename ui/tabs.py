@@ -82,7 +82,6 @@ def render_tab_detection(final, annotated, hotspots):
         rows_html = ""
         for i, hs in enumerate(hotspots):
             sev = hs.get("severity", "MODERATE").upper()
-            conf = hs.get("final_confidence", hs.get("detection_confidence", "—"))
             note = (hs.get("note") or "—")[:90]
             dtype = hs.get("damage_type", "—")
             zone = f"SB-{chr(65+i)}{i+1:02d}"
@@ -91,7 +90,6 @@ def render_tab_detection(final, annotated, hotspots):
             rows_html += f"""<tr>
               <td><code style="font-size:0.9rem;color:#34d399;background:transparent;">{zone}</code></td>
               <td><span class="sev-pill sev-{sev}">{sev}</span></td>
-              <td style="font-family:'JetBrains Mono',monospace;font-size:0.95rem;font-weight:700;">{conf}%</td>
               <td style="font-weight:500;">{dtype}</td>
               <td style="font-size:0.9rem;color:#cbd5e1;max-width:250px;">{note}</td>
               <td style="font-family:'JetBrains Mono',monospace;">{ov}%</td>
@@ -100,7 +98,7 @@ def render_tab_detection(final, annotated, hotspots):
         st.markdown(
             f'<div style="border:1px solid #334155;border-radius:12px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.2);">'
             f'<table class="hotspot-table"><thead><tr>'
-            f"<th>Zone</th><th>Severity</th><th>AI Conf.</th><th>Damage Type</th>"
+            f"<th>Zone</th><th>Severity</th><th>Damage Type</th>"
             f"<th>Observation</th><th>Spectral Overlap</th><th>Verdict</th>"
             f"</tr></thead><tbody>{rows_html}</tbody></table></div>",
             unsafe_allow_html=True,
